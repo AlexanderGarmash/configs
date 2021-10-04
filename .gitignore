@@ -1,0 +1,7 @@
+*
+**/.DS_Store/
+
+!.gitignore
+!.config/flake8
+!.config/nvim/init.lua
+!.config/nvim/ftplugin/python.lua
