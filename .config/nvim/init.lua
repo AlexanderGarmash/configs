@@ -105,6 +105,10 @@ end)
 vim.g.mapleader = ','
 -- Mappings
 map('n', '<Space>',   '<NOP>')      -- Unmap space key
+map('n', '<Up>', '<NOP>')
+map('n', '<Down>', '<NOP>')
+map('n', '<Left>', '<NOP>')
+map('n', '<Right>', '<NOP>')
 -- Tab Completion
 map('i', '<Tab>',   'v:lua.tab_complete()',   {expr = true})
 map('s', '<Tab>',   'v:lua.tab_complete()',   {expr = true})
