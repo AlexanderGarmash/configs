@@ -1,3 +1,6 @@
+vim.lsp.set_log_level("debug")
+
+
 ----[[ Helpers ]]----
 
 local function map(mode, lhs, rhs, opts)
@@ -99,6 +102,7 @@ require('packer').startup(function()
   use 'ray-x/lsp_signature.nvim'
   use 'hrsh7th/vim-vsnip'
   use 'hrsh7th/nvim-compe'
+  use 'ludovicchabant/vim-gutentags' -- Automatic tags management
   use { 'nvim-telescope/telescope.nvim', requires = { 'nvim-lua/plenary.nvim' } }
 end)
 
@@ -119,6 +123,7 @@ map('n', '<C-h>', '<C-w>h')
 map('n', '<C-l>', '<C-w>l')
 map('n', '<C-j>', '<C-w>j')
 map('n', '<C-k>', '<C-w>k')
+map('n', '<C-w>o', ':only')
 -- for better Movement between Buffers
 map('n', '<Tab>',   ':bnext<CR>')
 map('n', '<S-Tab>', ':bprevious<CR>')
@@ -204,7 +209,7 @@ require('nvim-treesitter.configs').setup {
 
 -- LSP
 local lsp = require 'lspconfig'
-function _G.on_attach(client, bufnr)
+local on_attach = function(client, bufnr)
     require "lsp_signature".on_attach({
       bind = true,
       handler_opts = {
@@ -265,13 +270,34 @@ capabilities.textDocument.completion.completionItem.resolveSupport = {
     }
 }
 
-local servers = { "pylsp" }
-for _, ls in ipairs(servers) do
-    lsp[ls].setup {
-        on_attach = _G.on_attach,
-        capabilities = capabilities,
+-- local servers = { "pylsp" }
+-- for _, ls in ipairs(servers) do
+--    lsp[ls].setup {
+--        on_attach = _G.on_attach,
+--        capabilities = capabilities,
+--    }
+-- end
+
+require'lspconfig'.pylsp.setup{
+    on_attach = on_attach,
+    settings={
+        pylsp = {
+            configurationSources = {"pyflakes"},
+            plugins = { pydocstyle = {enabled = true}},
+            type = "string",
+            flake8 = { 
+                enabled = true,
+                maxLineLength = 120
+            },
+            pycodestyle = { 
+                maxLineLength = 120,
+                enabled = false
+            }
+        }
     }
-end
+}
+
+require'lspconfig'["pylsp"].manager.try_add_wrapper()
 
 --Compe-config
 require'compe'.setup {
