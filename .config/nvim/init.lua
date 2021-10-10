@@ -1,213 +1,12 @@
-vim.lsp.set_log_level("debug")
+require'plugins'
+require'init'
+require'keybindings'
+require'vim_config'
+require'completion'
+require'treesitter'
+require'init_telescope'
 
-
-----[[ Helpers ]]----
-
-local function map(mode, lhs, rhs, opts)
-    local options = {noremap = true, silent = true}
-    if opts then options = vim.tbl_extend('force', options, opts) end
-    vim.api.nvim_set_keymap(mode, lhs, rhs, options)
-end
-
-local t = function(str)
-    return vim.api.nvim_replace_termcodes(str, true, true, true)
-end
-
-local check_back_space = function()
-    local col = vim.fn.col('.') - 1
-    if col == 0 or vim.fn.getline('.'):sub(col, col):match('%s') then
-        return true
-    else
-        return false
-    end
-end
-
-_G.tab_complete = function()
-    if vim.fn.pumvisible() == 1 then
-        return t "<C-n>"
-    elseif check_back_space() then
-        return t "<Tab>"
-    else
-        return vim.fn['compe#complete']()
-    end
-end
-
-_G.s_tab_complete = function()
-    if vim.fn.pumvisible() == 1 then
-        return t "<C-p>"
-    else
-        return t "<S-Tab>"
-    end
-end
-
--- Fundamental settings
-vim.bo.fileencoding = 'utf-8'
-vim.o.fileencodings = 'ucs-bom,utf-8,gbk,cp936,latin-1'
-vim.o.fileformat = 'unix'
-vim.o.fileformats = 'unix,dos,mac'
-vim.o.filetype = 'on'
-vim.cmd('filetype plugin on')
-vim.o.syntax = 'on'
-vim.opt.undofile = true     --Save undo history
---Do not save when switching buffers (note: this is now a default on master)
-vim.o.hidden = true
-
--- General indentation settings
-vim.cmd('filetype plugin indent on')
-vim.api.nvim_command('set smartindent')
-vim.api.nvim_command('set smartindent')
-vim.api.nvim_command('set expandtab') -- tab to spaces
-vim.o.softtabstop = 4       -- How many columns cursors moves right, when <Tab> pressed
-vim.o.shiftwidth = 4        -- the width for indent
-
--- Appearance
-vim.wo.number = true                -- Show current line number
-vim.wo.relativenumber = true        -- use relative numbers for other lines
-vim.api.nvim_command('set nowrap')  -- disable wraps
-vim.api.nvim_command('colorscheme gruvbox8_soft')
-vim.api.nvim_command('set scrolloff=5')
-vim.api.nvim_command('set sidescrolloff=20')    -- The minimal number of columns to scroll horizontally.
-vim.api.nvim_command('set cursorline')  -- highlight the line of the cursor
-
--- Install packer
-local install_path = vim.fn.stdpath 'data' .. '/site/pack/packer/start/packer.nvim'
-
-if vim.fn.empty(vim.fn.glob(install_path)) > 0 then
-  vim.fn.execute('!git clone https://github.com/wbthomason/packer.nvim ' .. install_path)
-end
-
-vim.api.nvim_exec(
-  [[
-  augroup Packer
-    autocmd!
-    autocmd BufWritePost init.lua PackerCompile
-  augroup end
-]],
-  false
-)
-
-local use = require('packer').use
-require('packer').startup(function()
-  use 'wbthomason/packer.nvim'                          -- Package manager
-  use({"lifepillar/vim-gruvbox8", event = 'VimEnter'})  -- Cool theme
-  use 'itchyny/lightline.vim'                           -- Fancier statusline
-  -- Highlight, edit, and navigate code using a fast incremental parsing library
-  use {
-        'nvim-treesitter/nvim-treesitter',
-        run = ':TSUpdate'
-    }
-  -- Additional textobjects for treesitter
-  use 'nvim-treesitter/nvim-treesitter-textobjects'
-  use 'neovim/nvim-lspconfig' -- Collection of configurations for built-in LSP client
-  use 'ray-x/lsp_signature.nvim'
-  use 'hrsh7th/vim-vsnip'
-  use 'hrsh7th/nvim-compe'
-  use 'ludovicchabant/vim-gutentags' -- Automatic tags management
-  use { 'nvim-telescope/telescope.nvim', requires = { 'nvim-lua/plenary.nvim' } }
-end)
-
-vim.g.mapleader = ','
--- Mappings
-map('n', '<Space>',   '<NOP>')      -- Unmap space key
-map('n', '<Up>', '<NOP>')
-map('n', '<Down>', '<NOP>')
-map('n', '<Left>', '<NOP>')
-map('n', '<Right>', '<NOP>')
--- Tab Completion
-map('i', '<Tab>',   'v:lua.tab_complete()',   {expr = true})
-map('s', '<Tab>',   'v:lua.tab_complete()',   {expr = true})
-map('i', '<S-Tab>', 'v:lua.s_tab_complete()', {expr = true})
-map('s', '<S-Tab>', 'v:lua.s_tab_complete()', {expr = true})
--- for better Movement between Windows
-map('n', '<C-h>', '<C-w>h')
-map('n', '<C-l>', '<C-w>l')
-map('n', '<C-j>', '<C-w>j')
-map('n', '<C-k>', '<C-w>k')
-map('n', '<C-w>o', ':only')
--- for better Movement between Buffers
-map('n', '<Tab>',   ':bnext<CR>')
-map('n', '<S-Tab>', ':bprevious<CR>')
--- Telescope
-require('telescope').setup {
-  defaults = {
-    mappings = {
-      i = {
-        ['<C-u>'] = false,
-        ['<C-d>'] = false,
-      },
-    },
-  },
-}
-vim.api.nvim_set_keymap('n', '<leader>fb', [[<cmd>lua require('telescope.builtin').buffers()<CR>]], { noremap = true, silent = true })
-vim.api.nvim_set_keymap('n', '<leader>ff', [[<cmd>lua require('telescope.builtin').find_files({previewer = false})<CR>]], { noremap = true, silent = true })
-vim.api.nvim_set_keymap('n', '<leader>sb', [[<cmd>lua require('telescope.builtin').current_buffer_fuzzy_find()<CR>]], { noremap = true, silent = true })
-vim.api.nvim_set_keymap('n', '<leader>sh', [[<cmd>lua require('telescope.builtin').help_tags()<CR>]], { noremap = true, silent = true })
-vim.api.nvim_set_keymap('n', '<leader>st', [[<cmd>lua require('telescope.builtin').tags()<CR>]], { noremap = true, silent = true })
-vim.api.nvim_set_keymap('n', '<leader>gs', [[<cmd>lua require('telescope.builtin').grep_string()<CR>]], { noremap = true, silent = true })
-vim.api.nvim_set_keymap('n', '<leader>fg', [[<cmd>lua require('telescope.builtin').live_grep()<CR>]], { noremap = true, silent = true })
-vim.api.nvim_set_keymap('n', '<leader>to', [[<cmd>lua require('telescope.builtin').tags{ only_current_buffer = true }<CR>]], { noremap = true, silent = true })
-vim.api.nvim_set_keymap('n', '<leader>?', [[<cmd>lua require('telescope.builtin').oldfiles()<CR>]], { noremap = true, silent = true })
-
---Set statusbar
-vim.g.lightline = {
-  colorscheme = 'solarized',
-  active = { left = { { 'mode', 'paste' }, { 'readonly', 'filename', 'modified' } } },
-}
-
--- Treesitter configuration
--- Parsers must be installed manually via :TSInstall
-require('nvim-treesitter.configs').setup {
-  highlight = {
-    enable = true, -- false will disable the whole extension
-  },
-  incremental_selection = {
-    enable = true,
-    keymaps = {
-      init_selection = 'gnn',
-      node_incremental = 'grn',
-      scope_incremental = 'grc',
-      node_decremental = 'grm',
-    },
-  },
-  indent = {
-    enable = true,
-  },
-  textobjects = {
-    select = {
-      enable = true,
-      lookahead = true, -- Automatically jump forward to textobj, similar to targets.vim
-      keymaps = {
-        -- You can use the capture groups defined in textobjects.scm
-        ['af'] = '@function.outer',
-        ['if'] = '@function.inner',
-        ['ac'] = '@class.outer',
-        ['ic'] = '@class.inner',
-      },
-    },
-    move = {
-      enable = true,
-      set_jumps = true, -- whether to set jumps in the jumplist
-      goto_next_start = {
-        [']m'] = '@function.outer',
-        [']]'] = '@class.outer',
-      },
-      goto_next_end = {
-        [']M'] = '@function.outer',
-        [']['] = '@class.outer',
-      },
-      goto_previous_start = {
-        ['[m'] = '@function.outer',
-        ['[['] = '@class.outer',
-      },
-      goto_previous_end = {
-        ['[M'] = '@function.outer',
-        ['[]'] = '@class.outer',
-      },
-    },
-  },
-}
-
--- LSP
+-- LSP configuration doesn't work from separate file
 local lsp = require 'lspconfig'
 local on_attach = function(client, bufnr)
     require "lsp_signature".on_attach({
@@ -270,14 +69,9 @@ capabilities.textDocument.completion.completionItem.resolveSupport = {
     }
 }
 
--- local servers = { "pylsp" }
--- for _, ls in ipairs(servers) do
---    lsp[ls].setup {
---        on_attach = _G.on_attach,
---        capabilities = capabilities,
---    }
--- end
+vim.lsp.set_log_level("debug")
 
+-- by some reason it doesn't work if initialized in after/ftplugin/python.lua
 require'lspconfig'.pylsp.setup{
     on_attach = on_attach,
     settings={
@@ -285,42 +79,14 @@ require'lspconfig'.pylsp.setup{
             configurationSources = {"pyflakes"},
             plugins = { pydocstyle = {enabled = true}},
             type = "string",
-            flake8 = { 
+            flake8 = {
                 enabled = true,
                 maxLineLength = 120
             },
-            pycodestyle = { 
+            pycodestyle = {
                 maxLineLength = 120,
                 enabled = false
             }
         }
     }
-}
-
-require'lspconfig'["pylsp"].manager.try_add_wrapper()
-
---Compe-config
-require'compe'.setup {
-    autocomplete  = true;
-    debug = false;
-    documentation = true;
-    enabled    = true;
-    incomplete_delay = 400;
-    max_abbr_width = 100;
-    max_kind_width = 100;
-    max_menu_width = 100;
-    min_length = 1;
-    preselect  = 'enable';
-    source_timeout = 200;
-    throttle_time = 80;
-    source = {
-        buffer = true;
-        calc = true;
-        nvim_lsp = true;
-        nvim_lua = true;
-        path = true;
-        spell  = true;
-        tags = true;
-        vsnip  = true;
-    };
 }
